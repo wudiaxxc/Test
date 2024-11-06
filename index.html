@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>分享页面</title>
+    <script src="https://fe-static.xhscdn.com/biz-static/goten/xhs-1.0.1.js"></script> <!-- 引入小红书 JS API -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.4.2/sha256.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        h2 {
+            margin-bottom: 10px;
+        }
+        button {
+            margin-right: 10px;
+            padding: 10px 20px;
+            color: #fff;
+            background-color: #FF2442; /* 设置按钮为红色 */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #shareImage {
+            width: 200px;
+            height: auto;
+            display: block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 分享标题 -->
+    <div class="section">
+        <h2>分享的标题</h2>
+        <p id="titleText">麻辣诱人的火锅盛宴</p>
+        <button onclick="copyText('titleText')">复制标题</button>
+    </div>
+
+    <!-- 分享内容 -->
+    <div class="section">
+        <h2>分享的内容</h2>
+        <p id="contentText">🔥 火锅控们，你们的福音来啦！
+近在三里屯附近发现了一家超级棒的火锅店，简直让我流连忘返！这家店不仅位置便利，而且环境超级温馨，一进门就被浓郁的香气给吸引住了。这次去主要是为了尝试他们的特色锅底，店里的汤底选择真的太丰富了，从经典的九宫格到创新的菌菇汤底，应有尽有！
+我最终选择了今年超火的番茄清汤搭配麻辣锅底，既能享受麻辣的刺激，又能品尝到清甜的口感，简直是绝配。让人惊喜的是，他们的食材新鲜度真的没得说！不仅种类丰富，服务员还特别热情地推荐当季食材，确保每一道菜品都能满足食客的味蕾。
+整个用餐过程非常享受，感觉时间都过得特别快。最后的体验更是让我满意得不得了，朋友们都说这家火锅太值了！如果你也是火锅爱好者，强烈推荐你来这里打卡，保证让你欲罢不能！下次我还想尝试其他特色锅底，已经迫不及待想要再次光顾了！
+#火锅控必去 #三里屯美食 #麻辣火锅 #美食体验 #特色锅底 #新鲜食材 #火锅天堂 #美食爱好者的福音 #九宫格火锅 #舒适用餐环境 #个性化推荐 #火锅打卡地</p>
+        <button onclick="copyText('contentText')">复制内容</button>
+    </div>
+
+    <!-- 分享图片 -->
+    <div class="section">
+        <h2>分享的图片</h2>
+        <img id="shareImage" src="Test.jpg" alt="分享图片">
+        <button onclick="saveImage()">保存图片</button>
+    </div>
+
+    <!-- 分享到小红书按钮 -->
+    <div class="section">
+        <button id="shareButton">分享到小红书</button>
+    </div>
+
+    <script>
+        // 复制文本到剪贴板
+        function copyText(elementId) {
+            var text = document.getElementById(elementId).innerText;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(function() {
+                    alert('复制成功！');
+                }, function(err) {
+                    alert('复制失败，请手动复制。');
+                });
+            } else {
+                var textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('复制成功！');
+                } catch (err) {
+                    alert('复制失败，请手动复制。');
+                }
+                document.body.removeChild(textarea);
+            }
+        }
+
+        // 保存图片到相册
+        function saveImage() {
+            var image = document.getElementById('shareImage');
+            var link = document.createElement('a');
+            link.href = image.src;
+            link.download = '分享图片.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 分享到小红书
+        // Function to get the current timestamp in milliseconds
+        function getCurrentTimestamp() {
+            return Date.now();
+        }
+
+        // Function to generate a random nonce
+        function generateNonce(length) {
+            var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            var nonce = '';
+            for (var i = 0; i < length; i++) {
+                nonce += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return nonce;
+        }
+
+        // Function to build the signature
+        function buildSignature(appKey, nonce, timeStamp, appSecret) {
+            var params = {
+                'appKey': appKey,
+                'nonce': nonce,
+                'timeStamp': timeStamp.toString()
+            };
+            return generateSignature(appSecret, params);
+        }
+
+        // Function to generate the signature
+        function generateSignature(secretKey, params) {
+            // Step 1: Sort parameters by key
+            var sortedKeys = Object.keys(params).sort();
+            // Step 2: Concatenate sorted parameters into a string
+            var paramsString = sortedKeys.map(function(key) {
+                return key + '=' + params[key];
+            }).join('&');
+            // Step 3: Append the secret key to the parameter string
+            paramsString += secretKey;
+            // Step 4: Calculate the SHA-256 hash of the resulting string
+            var shaObj = new jsSHA('SHA-256', 'TEXT');
+            shaObj.update(paramsString);
+            var signature = shaObj.getHash('HEX');
+            return signature;
+        }
+
+        // 分享到小红书
+        document.getElementById('shareButton').addEventListener('click', function() {
+            console.log('分享按钮被点击');
+
+            var title = document.getElementById('titleText').innerText;
+            var content = document.getElementById('contentText').innerText;
+            var imageSrc = document.getElementById('shareImage').src;
+            
+            // 构建小红书的 URL Scheme
+            var xhsUrlScheme = 'xhsdiscover://create_post';
+            console.log('即将唤起小红书App，URL Scheme：', xhsUrlScheme);
+            // 唤起小红书App
+            window.location.href = xhsUrlScheme;
+
+            });
+
+    </script>
+
+</body>
+</html>
